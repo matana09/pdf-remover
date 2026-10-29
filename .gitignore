@@ -1,0 +1,35 @@
+# Python environments and generated caches
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local state, credentials and agent session files
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+.claude/
+.codex/
+HANDOFF.md
+logs/
+*.log
+tmp/
+
+# Personal documents and generated output. Synthetic test fixtures only.
+*.pdf
+!tests/sample_payslip.pdf
+!tests/sample_statement.pdf
+!tests/sample_hebrew.pdf
+uploads/
+downloads/
+output/
+
+# Editor and OS files
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store

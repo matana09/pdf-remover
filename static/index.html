@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Redactor — הסרת מידע רגיש</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <h1>PDF Redactor</h1>
+  <span class="badge">🔒 מקומי בלבד — שום מידע לא עוזב את המחשב</span>
+  <button id="logout-btn" class="btn tiny ghost hidden" style="margin-inline-start:auto">התנתק</button>
+</header>
+
+<!-- מסך התחברות / קביעת סיסמה -->
+<div id="auth-screen" class="hidden">
+  <div class="auth-box">
+    <h2 id="auth-title">התחברות</h2>
+    <p id="auth-hint" class="hint"></p>
+    <form id="auth-form" autocomplete="off">
+      <input type="password" id="auth-password" placeholder="סיסמה" autocomplete="off" minlength="8">
+      <input type="password" id="auth-password2" placeholder="אימות סיסמה" autocomplete="off" minlength="8" class="hidden">
+      <button type="submit" id="auth-submit" class="btn primary big">כניסה</button>
+    </form>
+    <div id="auth-error" class="auth-error hidden"></div>
+  </div>
+</div>
+
+<!-- מסך העלאה (מוצג רק אחרי התחברות) -->
+<section id="dropzone" class="hidden">
+  <div class="drop-inner">
+    <div class="drop-icon">📄</div>
+    <p class="drop-title">גרור לכאן קובץ PDF</p>
+    <p class="drop-sub">אפשר לבחור כמה קבצים יחד — הם ימוזגו למסמך אחד</p>
+    <button id="pick-btn" class="btn primary">בחר קבצים</button>
+    <input type="file" id="file-input" accept="application/pdf,.pdf" multiple hidden>
+  </div>
+</section>
+
+<div id="loading" class="hidden">
+  <div class="spinner"></div>
+  <p id="loading-text">מעבד את הקובץ…</p>
+</div>
+
+<!-- מסך עבודה -->
+<main id="workspace" class="hidden">
+  <aside id="sidebar">
+    <div class="file-info">
+      <strong id="file-name"></strong>
+      <span id="page-count" class="muted"></span>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>מסמכים במיזוג</h3>
+        <button id="add-more-btn" class="btn tiny">הוסף</button>
+      </div>
+      <div id="sources-list"></div>
+      <div id="merge-notice" class="notice hidden"></div>
+      <input type="file" id="add-more-input" accept="application/pdf,.pdf" multiple hidden>
+    </div>
+
+    <div class="panel">
+      <h3>חיפוש טקסט</h3>
+      <p class="hint">הקלד ערך (שם, מספר) והסר את כל המופעים בכל העמודים.</p>
+      <div class="search-row">
+        <input type="text" id="search-input" placeholder="לדוגמה: ישראל ישראלי">
+        <button id="search-btn" class="btn">חפש</button>
+      </div>
+      <div id="search-result" class="muted small"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>זיהוי אוטומטי</h3>
+        <button id="accept-all" class="btn tiny">אשר הכל</button>
+      </div>
+      <div id="candidates"></div>
+    </div>
+
+    <div class="panel">
+      <h3>סימונים ידניים</h3>
+      <p class="hint">גרור עם העכבר על העמוד כדי לסמן אזור. לחיצה על סימון מוחקת אותו.</p>
+      <div id="manual-list" class="muted small">אין סימונים ידניים.</div>
+    </div>
+
+    <div class="panel">
+      <label class="check">
+        <input type="checkbox" id="black-boxes">
+        <span>סמן בשחור במקום אזור ריק</span>
+      </label>
+      <p class="hint">ברירת המחדל: האזור נשאר ריק לגמרי. התוכן נמחק מהקובץ בשני המקרים — המלבן השחור הוא סימון ויזואלי בלבד, שמראה היכן הוסר מידע.</p>
+    </div>
+
+    <div class="panel">
+      <label class="check">
+        <input type="checkbox" id="rasterize">
+        <span>מצב ביטחון מקסימלי</span>
+      </label>
+      <p class="hint">ממיר כל עמוד לתמונה — מוחק כל שריד טקסט נסתר. הקובץ יהיה גדול יותר ולא ניתן לחיפוש.</p>
+    </div>
+
+    <div class="actions">
+      <div id="selected-count" class="muted small">0 אזורים מסומנים</div>
+      <button id="redact-btn" class="btn primary big" disabled>בצע הסרה</button>
+      <div class="action-row">
+        <button id="add-page-btn" class="btn ghost">➕ הוסף קובץ ומזג</button>
+        <button id="reset-btn" class="btn ghost">קובץ חדש</button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="viewer">
+    <div id="scan-banner" class="banner hidden">
+      ⚠️ המסמך סרוק (ללא שכבת טקסט) — זיהוי אוטומטי אינו זמין. סמן ידנית עם העכבר.
+    </div>
+    <div id="pages"></div>
+  </div>
+</main>
+
+<!-- דוח אימות -->
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button id="download-btn" class="btn primary">הורד קובץ מנוקה</button>
+      <button id="modal-close" class="btn ghost">סגור</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
